@@ -292,7 +292,13 @@ select.full-inp { appearance: none; cursor: pointer; }
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-row1">
-    <div class="app-name">💰 MI PLAN</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="profile-avatar" onclick="editProfile()" style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:Syne,sans-serif;font-weight:800;font-size:14px;color:var(--bg);flex-shrink:0">?</div>
+      <div>
+        <div class="app-name" style="font-size:16px">💰 MI PLAN</div>
+        <div id="profile-name" style="font-size:11px;color:var(--muted);cursor:pointer" onclick="editProfile()">Toca para agregar tu nombre</div>
+      </div>
+    </div>
     <div style="display:flex;align-items:center;gap:6px">
       <span style="font-size:10px;color:var(--muted)" id="sync-lbl">•••</span>
       <div class="sync-dot" id="sync-dot"></div>
@@ -356,25 +362,56 @@ select.full-inp { appearance: none; cursor: pointer; }
       </div>
     </div>
 
+    <div class="sec-lbl">Meta financiera semanal</div>
+    <div class="form-card" style="padding:14px">
+      <div class="form-title">🎯 ¿Cuánto quieres ganar esta semana?</div>
+      <div class="field-wrap">
+        <div class="field-lbl">Meta semanal ($)</div>
+        <input type="number" class="full-inp" id="meta-semanal" placeholder="Ej: 800" step="1" min="0" oninput="calcMeta()">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">
+        <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--border)">
+          <div style="font-family:Syne,sans-serif;font-weight:700;font-size:16px;color:var(--accent)" id="meta-por-dia">$0</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px">Por día</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--border)">
+          <div style="font-family:Syne,sans-serif;font-weight:700;font-size:16px;color:var(--green)" id="meta-ganado">$0</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px">Ganado</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--border)">
+          <div style="font-family:Syne,sans-serif;font-weight:700;font-size:16px" id="meta-falta">$0</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px">Falta</div>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:4px">
+          <span>Progreso semanal</span><span id="meta-pct">0%</span>
+        </div>
+        <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden">
+          <div id="meta-bar" style="height:100%;background:var(--green);border-radius:4px;transition:width 0.4s;width:0%"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="sec-lbl">Registrar día de trabajo</div>
     <div class="form-card">
       <div class="form-title">¿Cómo estuvo hoy?</div>
       <div class="field-wrap">
         <div class="field-lbl">Fuente de ingreso</div>
         <div class="src-grid">
-          <div class="src-btn active" id="src-eats" onclick="selSrc('eats')">
-            <div class="src-ico">🛵</div>
-            <div class="src-nm">Uber Eats</div>
+          <div class="src-btn active" id="src-eats" onclick="selSrc('work')">
+            <div class="src-ico">💼</div>
+            <div class="src-nm">Trabajo</div>
           </div>
-          <div class="src-btn" id="src-other" onclick="selSrc('other')">
+          <div class="src-btn" id="src-other" onclick="selSrc('extra')">
             <div class="src-ico">💼</div>
             <div class="src-nm">Otro trabajo</div>
           </div>
         </div>
       </div>
       <div class="field-wrap" id="other-wrap" style="display:none">
-        <div class="field-lbl">¿Cuál trabajo?</div>
-        <input type="text" class="full-inp" id="other-name" placeholder="Ej: limpieza, delivery...">
+        <div class="field-lbl">¿Cuál ingreso?</div>
+        <input type="text" class="full-inp" id="other-name" placeholder="Ej: freelance, renta, bono...">
       </div>
       <div class="field-wrap">
         <div class="field-lbl">Ingreso bruto del día ($)</div>
@@ -424,9 +461,19 @@ select.full-inp { appearance: none; cursor: pointer; }
           </select>
         </div>
       </div>
+      <div class="form-grid" style="margin-bottom:12px">
+        <div>
+          <div class="field-lbl">Fecha de vencimiento</div>
+          <input type="date" class="full-inp" id="nd-due">
+        </div>
+        <div>
+          <div class="field-lbl">Pago mínimo ($)</div>
+          <input type="number" class="full-inp" id="nd-min" placeholder="0.00" step="0.01">
+        </div>
+      </div>
       <div class="field-wrap">
         <div class="field-lbl">Nota (opcional)</div>
-        <input type="text" class="full-inp" id="nd-note" placeholder="Ej: Vence el 06/15">
+        <input type="text" class="full-inp" id="nd-note" placeholder="Ej: Llamar al banco primero">
       </div>
       <button class="btn-save" onclick="addDebt()" style="background:var(--surface2);color:var(--txt);border:1px solid var(--border2)">+ Agregar deuda</button>
     </div>
@@ -602,8 +649,8 @@ const DEFAULT_DEBTS = [
 window._db = db;
 window._userId = USER_ID;
 
-let state = { debts: [], days: [], saldos: { banco: 0, efectivo: 0, tarjeta: 0 } };
-let curSrc = 'eats';
+let state = { debts: [], days: [], saldos: { banco: 0, efectivo: 0, tarjeta: 0 }, profile: '', meta: 0 };
+let curSrc = 'work';
 
 function setSyncState(s) {
   const dot = document.getElementById('sync-dot');
@@ -632,6 +679,8 @@ async function loadState() {
       state.debts = data.debts || DEFAULT_DEBTS;
       state.days = data.days || [];
       state.saldos = data.saldos || { banco: 0, efectivo: 0, tarjeta: 0 };
+      state.profile = data.profile || '';
+      state.meta = data.meta || 0;
     } else {
       state.debts = DEFAULT_DEBTS;
       state.days = [];
@@ -681,8 +730,9 @@ window.showTab = function(tab) {
 window.selSrc = function(s) {
   curSrc = s;
   document.querySelectorAll('.src-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('src-' + s).classList.add('active');
-  document.getElementById('other-wrap').style.display = s === 'other' ? 'block' : 'none';
+  const btn = document.getElementById('src-' + s);
+  if (btn) btn.classList.add('active');
+  document.getElementById('other-wrap').style.display = s === 'extra' ? 'block' : 'none';
 };
 
 window.addExp = function() {
@@ -721,7 +771,7 @@ window.saveDay = async function() {
   });
   const totalExp = exps.reduce((s, e) => s + e.amt, 0);
   const otherName = document.getElementById('other-name').value.trim();
-  const srcLabel = curSrc === 'eats' ? 'Uber Eats' : (otherName || 'Otro trabajo');
+  const srcLabel = curSrc === 'work' ? 'Trabajo' : (otherName || 'Otros ingresos');
   const today = new Date().toLocaleDateString('es-US', {month:'short', day:'numeric', year:'numeric'});
   state.days.unshift({ date: today, src: curSrc, srcLabel, income: inc, expenses: exps, totalExp, net: inc - totalExp });
   await saveState();
@@ -737,14 +787,18 @@ window.addDebt = async function() {
   const amt = parseFloat(document.getElementById('nd-amt').value);
   const pri = document.getElementById('nd-pri').value;
   const note = document.getElementById('nd-note').value.trim();
+  const due = document.getElementById('nd-due').value;
+  const min = parseFloat(document.getElementById('nd-min').value) || 0;
   if (!name || !amt) { toast('Completa nombre y monto'); return; }
-  state.debts.push({ id: 'c_' + Date.now(), name, total: amt, paid: 0, priority: pri, note, history: [] });
+  state.debts.push({ id: 'c_' + Date.now(), name, total: amt, paid: 0, priority: pri, note, due, min, history: [] });
   await saveState();
   renderDebts();
   updateHeader();
   document.getElementById('nd-name').value = '';
   document.getElementById('nd-amt').value = '';
   document.getElementById('nd-note').value = '';
+  document.getElementById('nd-due').value = '';
+  document.getElementById('nd-min').value = '';
   toast('✅ Deuda agregada');
 };
 
@@ -795,6 +849,25 @@ function buildCard(d) {
   const tagLbl = { urgent:'🔴 Urgente', warning:'🟠 Importante', normal:'🔵 Normal' };
   const tc = done ? 't-green' : tagMap[d.priority];
   const tl = done ? '✅ Pagado' : tagLbl[d.priority];
+  
+  // Due date logic
+  let dueBadge = '';
+  let dueInfo = '';
+  if (d.due && !done) {
+    const dueDate = new Date(d.due + 'T00:00:00');
+    const now = new Date();
+    const diffDays = Math.ceil((dueDate - now) / (1000*60*60*24));
+    if (diffDays < 0) {
+      dueBadge = `<span class="tag t-red">🚨 VENCIDA hace ${Math.abs(diffDays)} días</span>`;
+    } else if (diffDays <= 7) {
+      dueBadge = `<span class="tag t-red">⏰ Vence en ${diffDays} día${diffDays===1?'':'s'}</span>`;
+    } else {
+      const opts = {month:'short', day:'numeric'};
+      dueBadge = `<span class="tag t-blue">📅 ${dueDate.toLocaleDateString('es-US', opts)}</span>`;
+    }
+    dueInfo = `Vence: ${dueDate.toLocaleDateString('es-US', {month:'long', day:'numeric', year:'numeric'})}`;
+  }
+  const minInfo = d.min > 0 ? `Pago mínimo: ${fmt(d.min)}` : '';
   const hist = (d.history || []).slice(-4).reverse().map(h =>
     `<div class="pay-hist-item"><span>${h.date}</span><span>+${fmt(h.amount)}</span></div>`
   ).join('');
@@ -806,7 +879,8 @@ function buildCard(d) {
     </div>
     <div class="card-tags">
       <span class="tag ${tc}">${tl}</span>
-      ${d.note ? `<span class="tag t-blue" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.note}</span>` : ''}
+      ${dueBadge}
+      ${d.note ? `<span class="tag t-blue" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.note}</span>` : ''}
     </div>
     <div class="prog-wrap">
       <div class="prog-lbls"><span>${fmt(d.paid)} pagado</span><span>${done ? '¡Listo!' : 'Faltan ' + fmt(left)}</span></div>
@@ -814,6 +888,8 @@ function buildCard(d) {
     </div>
     <div class="card-body" id="cb-${d.id}">
       ${d.note ? `<div class="card-note">${d.note}</div>` : ''}
+      ${dueInfo ? `<div class="card-note">📅 ${dueInfo}</div>` : ''}
+      ${minInfo ? `<div class="card-note">💳 ${minInfo}</div>` : ''}
       <div class="pay-row">
         <input type="number" id="pi-${d.id}" placeholder="Monto pagado $" step="0.01">
         <button class="btn-pay" onclick="registerPayment('${d.id}')">+ Pago</button>
@@ -840,7 +916,7 @@ function renderLog() {
     return;
   }
   el.innerHTML = state.days.slice(0, 60).map(d => `
-    <div class="log-item src-${d.src}">
+    <div class="log-item src-${d.src === 'work' ? 'eats' : 'other'}">
       <div>
         <div class="log-date">${d.date}</div>
         <div class="log-src">${d.srcLabel}</div>
@@ -942,6 +1018,60 @@ window.saveSaldos = function() {
   saveState();
 };
 
+// PROFILE
+window.editProfile = function() {
+  const name = prompt('¿Cómo te llamas?', state.profile || '');
+  if (name !== null) {
+    state.profile = name.trim();
+    renderProfile();
+    saveState();
+  }
+};
+
+function renderProfile() {
+  const name = state.profile || '';
+  const nameEl = document.getElementById('profile-name');
+  const avatarEl = document.getElementById('profile-avatar');
+  if (nameEl) nameEl.textContent = name || 'Toca para agregar tu nombre';
+  if (avatarEl) avatarEl.textContent = name ? name.charAt(0).toUpperCase() : '?';
+}
+
+// META SEMANAL
+window.calcMeta = async function() {
+  const meta = parseFloat(document.getElementById('meta-semanal').value) || 0;
+  state.meta = meta;
+  renderMeta();
+  saveState();
+};
+
+function renderMeta() {
+  const meta = state.meta || 0;
+  const now = new Date();
+  const dow = now.getDay();
+  const startWeek = new Date(now); startWeek.setDate(now.getDate() - dow); startWeek.setHours(0,0,0,0);
+  const wDays = state.days.filter(d => new Date(d.date) >= startWeek);
+  const ganado = wDays.reduce((s,d) => s+d.net, 0);
+  const falta = Math.max(0, meta - ganado);
+  const diasRestantes = Math.max(1, 7 - dow);
+  const porDia = falta > 0 ? falta / diasRestantes : 0;
+  const pct = meta > 0 ? Math.min(100, (ganado / meta) * 100) : 0;
+
+  const metaInp = document.getElementById('meta-semanal');
+  if (metaInp && meta && !metaInp.value) metaInp.value = meta;
+
+  const pdEl = document.getElementById('meta-por-dia');
+  const mgEl = document.getElementById('meta-ganado');
+  const mfEl = document.getElementById('meta-falta');
+  const mpEl = document.getElementById('meta-pct');
+  const mbEl = document.getElementById('meta-bar');
+
+  if (pdEl) pdEl.textContent = fmt(porDia);
+  if (mgEl) { mgEl.textContent = fmt(ganado); mgEl.style.color = ganado >= meta && meta > 0 ? 'var(--green)' : 'var(--accent)'; }
+  if (mfEl) { mfEl.textContent = fmt(falta); mfEl.style.color = falta <= 0 ? 'var(--green)' : 'var(--red)'; }
+  if (mpEl) mpEl.textContent = Math.round(pct) + '%';
+  if (mbEl) { mbEl.style.width = pct + '%'; mbEl.style.background = pct >= 100 ? 'var(--green)' : pct >= 60 ? 'var(--accent)' : 'var(--red)'; }
+}
+
 function loadSaldos() {
   const s = state.saldos || {};
   const banco = s.banco || 0;
@@ -961,6 +1091,8 @@ function renderAll() {
   renderLog();
   updateHeader();
   loadSaldos();
+  renderProfile();
+  renderMeta();
 }
 
 loadState();
