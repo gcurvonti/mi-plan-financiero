@@ -10,16 +10,39 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
 body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--txt);font-size:13px;overscroll-behavior:none;}
-@media(min-width:600px){
-  .main{max-width:680px;margin-left:auto;margin-right:auto;}
-  .topnav .tabs{justify-content:center;}
-  .topnav-row1{max-width:680px;margin:0 auto;}
-  .bottombar .stats-row{max-width:680px;margin:0 auto;}
-  .modal{max-width:480px;}
+@media(min-width:640px){
+  .topnav-row1,.tabs,.bottombar .stats-row{max-width:900px;margin-left:auto;margin-right:auto;}
+  .modal{max-width:500px;}
 }
-@media(min-width:1024px){
-  .main{max-width:760px;}
-  .topnav-row1,.bottombar .stats-row{max-width:760px;margin:0 auto;}
+@media(min-width:900px){
+  body{font-size:14px;}
+  .topnav{padding:0;}
+  .topnav-row1{max-width:100%;padding:10px 32px 6px;}
+  .tabs{padding:0 32px 10px;gap:8px;}
+  .tab-btn{padding:7px 18px;font-size:12px;}
+  .bottombar{padding:10px 32px 12px;}
+  .bottombar .stats-row{max-width:100%;}
+  .main{
+    margin-top:96px;
+    margin-bottom:78px;
+    padding:20px 32px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    align-items:start;
+    max-width:100%;
+  }
+  .tab-content{display:none!important;}
+  .tab-content.active{display:block!important;}
+  /* On desktop show all tabs stacked in grid */
+  #tab-hoy{grid-column:1;}
+  #tab-deudas{grid-column:2;}
+  #tab-mensual{grid-column:1;}
+  #tab-historial{grid-column:2;}
+  #tab-reporte{grid-column:1;}
+  #tab-ia{grid-column:2;}
+  .modal{max-width:520px;}
+  .form-card,.card{border-radius:14px;}
 }
 
 /* TOP NAV TABS */
@@ -362,12 +385,7 @@ select.full-inp{appearance:none;cursor:pointer;}
     <div class="sec-lbl">Mis tips y recordatorios <button onclick="addManualTip()" style="font-size:10px;padding:3px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;color:var(--muted);cursor:pointer;margin-left:auto">+ Agregar</button></div>
     <div id="tips-list"></div>
 
-    <div class="sec-lbl">Tips fijos</div>
-    <div class="tip-box bad"><div class="tip-head">📞 Llamadas urgentes</div><div class="tip-body">• Aseguradora del carro — seguro VENCIDO 05/16<br>• Financiero del carro — pago VENCIDO 05/19<br>• Tribunal multa tránsito #0932600130920 (PIN 8838)<br>• Bank of America — pedir "hardship plan"<br>• Proveedor seguro médico — período de gracia</div></div>
-    <div class="tip-box warn"><div class="tip-head">🎯 Orden de ataque</div><div class="tip-body">1 — Seguro del carro<br>2 — Pago del carro<br>3 — Multa tránsito vencida<br>4 — Permiso de trabajo (julio 2026)<br>5 — Alquiler ($250/semana)<br>6 — Seguro médico<br>7 — Peajes y multas<br>8 — Tarjetas (mínimos)<br>9 — Upstart/BofA<br>10 — Gym</div></div>
-    <div class="tip-box bad"><div class="tip-head">⚠️ Upstart / FMA</div><div class="tip-body">Ofrecen 60% (~$4,200). Antes de pagar:<br>1. Pide "debt validation letter"<br>2. Verifica autoridad legal de FMA<br>3. Si no tienes $4,200, pide plan de cuotas<br>4. Consulta gratis: nfcc.org</div></div>
-    <div class="tip-box good"><div class="tip-head">🛵 Uber Eats mientras el carro se repara</div><div class="tip-body">Registra cada día. En semanas buenas aparta primero el dinero de prioridades antes de gastar en otra cosa.</div></div>
-    <div class="tip-box good"><div class="tip-head">❤️ Tu salud mental importa</div><div class="tip-body">Los días que no puedes trabajar son reales. Cada peso que pagas cuenta. Pequeños pagos frecuentes valen más que esperar tener todo.</div></div>
+
   </div>
 
 </div>
@@ -411,6 +429,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const USER_ID = 'curvonti_main';
+
+const DEFAULT_TIPS = [
+  {id:'tip_1',text:'📞 LLAMADAS URGENTES:\n• Aseguradora del carro — seguro VENCIDO 05/16\n• Financiero del carro — pago VENCIDO 05/19\n• Tribunal multa tránsito #0932600130920 (PIN 8838)\n• Bank of America — pedir hardship plan\n• Proveedor seguro médico — período de gracia',done:false,source:'fixed'},
+  {id:'tip_2',text:'🎯 ORDEN DE ATAQUE:\n1 — Seguro del carro\n2 — Pago del carro\n3 — Multa tránsito vencida\n4 — Permiso de trabajo (julio 2026)\n5 — Alquiler ($250/semana)\n6 — Seguro médico\n7 — Peajes y multas\n8 — Tarjetas (mínimos primero)\n9 — Upstart/BofA colección\n10 — Gym (pagar y cancelar)',done:false,source:'fixed'},
+  {id:'tip_3',text:'⚠️ UPSTART / FMA:\nOfrecen 60% (~$4,200). Antes de pagar:\n1. Pide "debt validation letter" por escrito\n2. Verifica autoridad legal de FMA\n3. Si no tienes $4,200, pide plan de cuotas\n4. Consulta gratis: nfcc.org',done:false,source:'fixed'},
+  {id:'tip_4',text:'🛵 DELIVERY MIENTRAS EL CARRO SE REPARA:\nRegistra cada día en la app. En semanas buenas aparta primero el dinero de prioridades antes de gastar en otra cosa.',done:false,source:'fixed'},
+  {id:'tip_5',text:'❤️ TU SALUD MENTAL IMPORTA:\nLos días que no puedes trabajar son reales y válidos. Cada peso que pagas cuenta. Pequeños pagos frecuentes valen más que esperar tener todo junto.',done:false,source:'fixed'},
+];
 
 const DEFAULT_DEBTS = [
   {id:'multatrafico',name:'🚦 Multa tránsito',total:158.00,paid:0,priority:'urgent',note:'#0932600130920 PIN 8838 — VENCIDA',due:'2026-05-15',min:0,history:[]},
@@ -465,7 +491,7 @@ async function loadState(){
       state.debts=d.debts||DEFAULT_DEBTS;
       state.recurring=d.recurring||DEFAULT_RECURRING;
       state.days=d.days||[];
-      state.tips=d.tips||[];
+      state.tips=d.tips||DEFAULT_TIPS;
       state.saldos=d.saldos||{banco:0,efectivo:0,tarjeta:0};
       state.meta=d.meta||0;
       state.profile=d.profile||'Curvonti';
@@ -473,6 +499,7 @@ async function loadState(){
     }else{
       state.debts=DEFAULT_DEBTS;
       state.recurring=DEFAULT_RECURRING;
+      state.tips=DEFAULT_TIPS;
       await saveState();
     }
     checkMonthlyReset();
