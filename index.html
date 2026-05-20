@@ -10,39 +10,20 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
 body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--txt);font-size:13px;overscroll-behavior:none;}
-@media(min-width:640px){
-  .topnav-row1,.tabs,.bottombar .stats-row{max-width:900px;margin-left:auto;margin-right:auto;}
+@media(min-width:600px){
+  .topnav-row1{max-width:700px;margin:0 auto;padding:10px 20px 6px;}
+  .tabs{max-width:700px;margin:0 auto;padding:0 20px 8px;justify-content:center;}
+  .bottombar .stats-row{max-width:700px;margin:0 auto;}
+  .main{max-width:700px;margin-left:auto;margin-right:auto;padding:0 20px 20px;}
   .modal{max-width:500px;}
 }
-@media(min-width:900px){
-  body{font-size:14px;}
-  .topnav{padding:0;}
-  .topnav-row1{max-width:100%;padding:10px 32px 6px;}
-  .tabs{padding:0 32px 10px;gap:8px;}
+@media(min-width:1024px){
+  .topnav-row1{max-width:860px;}
+  .tabs{max-width:860px;}
+  .bottombar .stats-row{max-width:860px;}
+  .main{max-width:860px;font-size:14px;}
   .tab-btn{padding:7px 18px;font-size:12px;}
-  .bottombar{padding:10px 32px 12px;}
-  .bottombar .stats-row{max-width:100%;}
-  .main{
-    margin-top:96px;
-    margin-bottom:78px;
-    padding:20px 32px;
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:20px;
-    align-items:start;
-    max-width:100%;
-  }
-  .tab-content{display:none!important;}
-  .tab-content.active{display:block!important;}
-  /* On desktop show all tabs stacked in grid */
-  #tab-hoy{grid-column:1;}
-  #tab-deudas{grid-column:2;}
-  #tab-mensual{grid-column:1;}
-  #tab-historial{grid-column:2;}
-  #tab-reporte{grid-column:1;}
-  #tab-ia{grid-column:2;}
-  .modal{max-width:520px;}
-  .form-card,.card{border-radius:14px;}
+  .modal{max-width:540px;}
 }
 
 /* TOP NAV TABS */
