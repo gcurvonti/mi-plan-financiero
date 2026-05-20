@@ -308,8 +308,8 @@ select.full-inp { appearance: none; cursor: pointer; }
       <div class="stat-lbl">Pagado</div>
     </div>
     <div class="stat-box">
-      <div class="stat-val yellow" id="hdr-today">$0</div>
-      <div class="stat-lbl">Hoy neto</div>
+      <div class="stat-val yellow" id="hdr-neto">$0</div>
+      <div class="stat-lbl">Neto total</div>
     </div>
   </div>
 </div>
@@ -319,6 +319,43 @@ select.full-inp { appearance: none; cursor: pointer; }
 
   <!-- TAB: HOY -->
   <div class="tab-content active" id="tab-hoy">
+    <div class="sec-lbl">Mis saldos actuales</div>
+    <div class="form-card">
+      <div class="form-title">💵 ¿Cuánto tienes disponible?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div>
+          <div class="field-lbl">🏦 Banco</div>
+          <input type="number" class="full-inp" id="saldo-banco" placeholder="$0.00" step="0.01" min="0" oninput="saveSaldos()">
+        </div>
+        <div>
+          <div class="field-lbl">💵 Efectivo</div>
+          <input type="number" class="full-inp" id="saldo-efectivo" placeholder="$0.00" step="0.01" min="0" oninput="saveSaldos()">
+        </div>
+      </div>
+      <div class="field-wrap">
+        <div class="field-lbl">💳 Tarjeta disponible</div>
+        <input type="number" class="full-inp" id="saldo-tarjeta" placeholder="$0.00" step="0.01" min="0" oninput="saveSaldos()">
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:11px;color:var(--muted)">Total disponible</div>
+        <div style="font-family:Syne,sans-serif;font-weight:700;font-size:18px;color:var(--green)" id="saldo-total">$0.00</div>
+      </div>
+    </div>
+
+    <div class="sec-lbl">Neto acumulado</div>
+    <div class="form-card" style="padding:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:var(--surface2);border-radius:10px;padding:12px;border:1px solid var(--border)">
+          <div style="font-family:Syne,sans-serif;font-weight:700;font-size:18px;color:var(--green)" id="neto-total-disp">$0.00</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px">Neto total</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:10px;padding:12px;border:1px solid var(--border)">
+          <div style="font-family:Syne,sans-serif;font-weight:700;font-size:18px;color:var(--accent)" id="neto-hoy-disp">$0.00</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px">Último día</div>
+        </div>
+      </div>
+    </div>
+
     <div class="sec-lbl">Registrar día de trabajo</div>
     <div class="form-card">
       <div class="form-title">¿Cómo estuvo hoy?</div>
@@ -565,7 +602,7 @@ const DEFAULT_DEBTS = [
 window._db = db;
 window._userId = USER_ID;
 
-let state = { debts: [], days: [] };
+let state = { debts: [], days: [], saldos: { banco: 0, efectivo: 0, tarjeta: 0 } };
 let curSrc = 'eats';
 
 function setSyncState(s) {
@@ -594,6 +631,7 @@ async function loadState() {
       const data = snap.data();
       state.debts = data.debts || DEFAULT_DEBTS;
       state.days = data.days || [];
+      state.saldos = data.saldos || { banco: 0, efectivo: 0, tarjeta: 0 };
     } else {
       state.debts = DEFAULT_DEBTS;
       state.days = [];
@@ -878,14 +916,51 @@ function renderReport() {
 function updateHeader() {
   const totalDebt = state.debts.reduce((s,d) => s+d.total, 0);
   const totalPaid = state.debts.reduce((s,d) => s+d.paid, 0);
+  const totalNeto = state.days.reduce((s,d) => s+d.net, 0);
+  const lastNet = state.days.length ? state.days[0].net : 0;
+
   document.getElementById('hdr-debt').textContent = fmt(totalDebt - totalPaid);
   document.getElementById('hdr-paid').textContent = fmt(totalPaid);
+  document.getElementById('hdr-neto').textContent = fmt(totalNeto);
+  document.getElementById('hdr-neto').style.color = totalNeto >= 0 ? 'var(--green)' : 'var(--red)';
+
+  // Neto cards on HOY tab
+  const ntEl = document.getElementById('neto-total-disp');
+  const nhEl = document.getElementById('neto-hoy-disp');
+  if (ntEl) { ntEl.textContent = fmt(totalNeto); ntEl.style.color = totalNeto >= 0 ? 'var(--green)' : 'var(--red)'; }
+  if (nhEl) { nhEl.textContent = fmt(lastNet); nhEl.style.color = lastNet >= 0 ? 'var(--accent)' : 'var(--red)'; }
+}
+
+// SALDOS
+window.saveSaldos = function() {
+  const banco = parseFloat(document.getElementById('saldo-banco').value) || 0;
+  const efectivo = parseFloat(document.getElementById('saldo-efectivo').value) || 0;
+  const tarjeta = parseFloat(document.getElementById('saldo-tarjeta').value) || 0;
+  const total = banco + efectivo + tarjeta;
+  document.getElementById('saldo-total').textContent = fmt(total);
+  state.saldos = { banco, efectivo, tarjeta };
+  saveState();
+};
+
+function loadSaldos() {
+  const s = state.saldos || {};
+  const banco = s.banco || 0;
+  const efectivo = s.efectivo || 0;
+  const tarjeta = s.tarjeta || 0;
+  const bEl = document.getElementById('saldo-banco');
+  const eEl = document.getElementById('saldo-efectivo');
+  const tEl = document.getElementById('saldo-tarjeta');
+  if (bEl && banco) bEl.value = banco;
+  if (eEl && efectivo) eEl.value = efectivo;
+  if (tEl && tarjeta) tEl.value = tarjeta;
+  document.getElementById('saldo-total').textContent = fmt(banco + efectivo + tarjeta);
 }
 
 function renderAll() {
   renderDebts();
   renderLog();
   updateHeader();
+  loadSaldos();
 }
 
 loadState();
