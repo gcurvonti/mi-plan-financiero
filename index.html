@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
 <title>Mi Plan Financiero</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -10,6 +10,17 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
 body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--txt);font-size:13px;overscroll-behavior:none;}
+@media(min-width:600px){
+  .main{max-width:680px;margin-left:auto;margin-right:auto;}
+  .topnav .tabs{justify-content:center;}
+  .topnav-row1{max-width:680px;margin:0 auto;}
+  .bottombar .stats-row{max-width:680px;margin:0 auto;}
+  .modal{max-width:480px;}
+}
+@media(min-width:1024px){
+  .main{max-width:760px;}
+  .topnav-row1,.bottombar .stats-row{max-width:760px;margin:0 auto;}
+}
 
 /* TOP NAV TABS */
 .topnav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);}
@@ -679,6 +690,27 @@ window.openEditRecurring=function(id){
 
 window.saveEdit=async function(){
   if(!editCtx)return;
+  if(editCtx.type==='day'){
+    const d=state.days[editCtx.idx];if(!d)return;
+    const inc=parseFloat(document.getElementById('eday-income').value)||0;
+    d.date=document.getElementById('eday-date').value.trim()||d.date;
+    d.srcLabel=document.getElementById('eday-src').value.trim()||d.srcLabel;
+    d.income=inc;
+    const exps=[];
+    document.querySelectorAll('#eday-exps input[id^="eday-expname"]').forEach(function(nameInp){
+      const idx=nameInp.id.replace('eday-expname-','');
+      const amtInp=document.getElementById('eday-expamt-'+idx);
+      const name=nameInp.value.trim();
+      const amt=parseFloat(amtInp?amtInp.value:0)||0;
+      if(name&&amt>0)exps.push({name,amt});
+    });
+    d.expenses=exps;
+    d.totalExp=exps.reduce((s,e)=>s+e.amt,0);
+    d.net=inc-d.totalExp;
+    await saveState();renderLog();updateHeader();renderMeta();
+    closeModal();toast('✅ Día actualizado');
+    return;
+  }
   if(editCtx.type==='debt'){
     const d=state.debts.find(x=>x.id===editCtx.id);if(!d)return;
     d.name=document.getElementById('em-name').value.trim()||d.name;
@@ -729,24 +761,28 @@ window.deleteTip=async function(id){
 function renderTips(){
   const el=document.getElementById('tips-list');
   if(!state.tips.length){
-    el.innerHTML='<div style="font-size:12px;color:var(--muted);padding:10px 0">Los consejos de la IA aparecerán aquí. También puedes agregar los tuyos.</div>';
+    el.innerHTML='<div style="font-size:12px;color:var(--muted);padding:10px 0">Los consejos de la IA aparecerán aquí. También puedes agregar los tuyos con el botón + Agregar.</div>';
     return;
   }
-  el.innerHTML=state.tips.map(t=>`
-    <div class="tip-card ${t.done?'tip-done':''}">
-      <div class="tip-card-head">
-        <div style="display:flex;gap:8px;align-items:flex-start;flex:1">
-          <div style="width:8px;height:8px;border-radius:50%;background:${t.source==='ai'?'var(--purple)':'var(--accent)'};flex-shrink:0;margin-top:4px"></div>
-          <div style="font-size:12px;line-height:1.6;color:${t.done?'var(--muted)':'var(--txt)'}">${t.text}</div>
-        </div>
-      </div>
-      <div class="tip-actions">
-        <button class="tip-btn done" onclick="toggleTip('${t.id}')">${t.done?'↺ Desmarcar':'✓ Hecho'}</button>
-        <button class="tip-btn edit" onclick="editTip('${t.id}')">✏️ Editar</button>
-        <button class="tip-btn del" onclick="deleteTip('${t.id}')">🗑️ Eliminar</button>
-      </div>
-    </div>`).join('');
+  let html='';
+  state.tips.forEach(function(t){
+    const dotColor=t.source==='ai'?'var(--purple)':'var(--accent)';
+    const textColor=t.done?'var(--muted)':'var(--txt)';
+    const doneStyle=t.done?'opacity:0.6;':'';
+    html+=`<div class="tip-card" style="${doneStyle}border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden;background:var(--surface)">`;
+    html+=`<div style="padding:12px 14px;display:flex;gap:8px;align-items:flex-start">`;
+    html+=`<div style="width:8px;height:8px;border-radius:50%;background:${dotColor};flex-shrink:0;margin-top:4px"></div>`;
+    html+=`<div style="font-size:12px;line-height:1.6;color:${textColor};${t.done?'text-decoration:line-through':''}">${t.text}</div>`;
+    html+=`</div>`;
+    html+=`<div style="display:flex;gap:6px;padding:0 14px 12px;flex-wrap:wrap">`;
+    html+=`<button onclick="toggleTip('${t.id}')" style="padding:5px 10px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--green);background:rgba(62,207,126,0.1);color:var(--green);font-family:Syne,sans-serif">${t.done?'↺ Desmarcar':'✓ Hecho'}</button>`;
+    html+=`<button onclick="editTip('${t.id}')" style="padding:5px 10px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--muted);font-family:Syne,sans-serif">✏️ Editar</button>`;
+    html+=`<button onclick="deleteTip('${t.id}')" style="padding:5px 10px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid rgba(255,92,92,0.3);background:rgba(255,92,92,0.1);color:var(--red);font-family:Syne,sans-serif">🗑️ Eliminar</button>`;
+    html+=`</div></div>`;
+  });
+  el.innerHTML=html;
 }
+
 
 // AI
 window.askAI=async function(){
@@ -901,11 +937,21 @@ function renderRecurring(){
 function renderLog(){
   const el=document.getElementById('log-list');
   if(!state.days.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div>Aún no hay días registrados</div>';return;}
-  el.innerHTML=state.days.slice(0,60).map(d=>`
-    <div class="log-item src-${d.src}">
-      <div><div class="log-date">${d.date}</div><div class="log-src">${d.srcLabel}</div>${d.expenses&&d.expenses.length?`<div class="log-exps">${d.expenses.map(e=>e.name+' '+fmt(e.amt)).join(' · ')}</div>`:''}</div>
-      <div class="log-right"><div class="log-inc">+${fmt(d.income)}</div><div class="log-exp-total">-${fmt(d.totalExp)}</div><div class="log-net">neto ${fmt(d.net)}</div></div>
-    </div>`).join('');
+  let html='';
+  state.days.slice(0,60).forEach(function(d,i){
+    html+=`<div style="background:var(--surface);border-radius:10px;border:1px solid var(--border);margin-bottom:8px;border-left:3px solid ${d.src==='work'?'var(--green)':'var(--blue)'}">`;
+    html+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:flex-start">`;
+    html+=`<div style="flex:1"><div style="font-size:11px;color:var(--muted)">${d.date}</div><div style="font-family:Syne,sans-serif;font-weight:700;font-size:13px;margin-top:2px">${d.srcLabel}</div>`;
+    if(d.expenses&&d.expenses.length) html+=`<div style="font-size:10px;color:var(--muted);margin-top:3px">${d.expenses.map(e=>e.name+' '+fmt(e.amt)).join(' · ')}</div>`;
+    html+=`</div>`;
+    html+=`<div style="text-align:right"><div style="font-family:Syne,sans-serif;font-weight:700;font-size:15px;color:var(--green)">+${fmt(d.income)}</div><div style="font-size:11px;color:var(--red);margin-top:2px">-${fmt(d.totalExp)}</div><div style="font-size:11px;color:var(--muted);margin-top:1px">neto ${fmt(d.net)}</div></div>`;
+    html+=`</div>`;
+    html+=`<div style="display:flex;gap:6px;padding:0 14px 10px">`;
+    html+=`<button onclick="editDay(${i})" style="padding:5px 12px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--muted);font-family:Syne,sans-serif">✏️ Editar</button>`;
+    html+=`<button onclick="deleteDay(${i})" style="padding:5px 12px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid rgba(255,92,92,0.3);background:rgba(255,92,92,0.1);color:var(--red);font-family:Syne,sans-serif">🗑️ Eliminar</button>`;
+    html+=`</div></div>`;
+  });
+  el.innerHTML=html;
 }
 
 function renderReport(){
@@ -959,6 +1005,61 @@ function loadSaldos(){
   if(bEl&&b)bEl.value=b;if(eEl&&e)eEl.value=e;if(tEl&&t)tEl.value=t;
   document.getElementById('saldo-total').textContent=fmt(b+e+t);
 }
+
+window.deleteDay=async function(idx){
+  if(!confirm('¿Eliminar este día registrado?'))return;
+  state.days.splice(idx,1);
+  await saveState();renderLog();updateHeader();renderMeta();toast('Día eliminado');
+};
+
+window.editDay=function(idx){
+  const d=state.days[idx];if(!d)return;
+  editCtx={type:'day',idx};
+  document.getElementById('edit-modal-title').textContent='Editar día registrado';
+  const expsHtml=d.expenses.map((e,i)=>`
+    <div style="display:flex;gap:6px;margin-bottom:6px" id="eday-exp-${i}">
+      <input type="text" class="full-inp" style="flex:2" value="${e.name}" id="eday-expname-${i}">
+      <input type="number" class="full-inp" style="flex:1" value="${e.amt}" step="0.01" id="eday-expamt-${i}">
+      <button onclick="removeEditExp(${i})" style="width:34px;height:34px;border-radius:8px;flex-shrink:0;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.2);color:var(--red);font-size:16px;cursor:pointer">×</button>
+    </div>`).join('');
+  document.getElementById('edit-modal-body').innerHTML=`
+    <div class="field-wrap"><div class="field-lbl">Fecha</div><input type="text" class="full-inp" id="eday-date" value="${d.date}"></div>
+    <div class="field-wrap"><div class="field-lbl">Fuente</div><input type="text" class="full-inp" id="eday-src" value="${d.srcLabel}"></div>
+    <div class="field-wrap"><div class="field-lbl">Ingreso bruto ($)</div><input type="number" class="full-inp" id="eday-income" value="${d.income}" step="0.01" oninput="updateEditDayNet()"></div>
+    <div class="field-lbl" style="margin-bottom:6px">Gastos</div>
+    <div id="eday-exps">${expsHtml}</div>
+    <button onclick="addEditExp()" style="width:100%;padding:7px;margin-bottom:12px;background:transparent;border:1px dashed var(--border2);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer">+ Agregar gasto</button>
+    <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between">
+      <span style="font-size:12px;color:var(--muted)">Neto calculado</span>
+      <span style="font-family:Syne,sans-serif;font-weight:700;font-size:15px;color:var(--green)" id="eday-net-preview">$0</span>
+    </div>`;
+  updateEditDayNet();
+  document.getElementById('edit-modal').classList.add('show');
+};
+
+let editExpCount=0;
+window.addEditExp=function(){
+  const c=document.getElementById('eday-exps').children.length;
+  const div=document.createElement('div');
+  div.style.cssText='display:flex;gap:6px;margin-bottom:6px';
+  div.id='eday-exp-new-'+c;
+  div.innerHTML=`<input type="text" class="full-inp" style="flex:2" placeholder="Gasto" id="eday-expname-new-${c}"><input type="number" class="full-inp" style="flex:1" placeholder="$0" step="0.01" id="eday-expamt-new-${c}" oninput="updateEditDayNet()"><button onclick="this.closest('div').remove();updateEditDayNet()" style="width:34px;height:34px;border-radius:8px;flex-shrink:0;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.2);color:var(--red);font-size:16px;cursor:pointer">×</button>`;
+  document.getElementById('eday-exps').appendChild(div);
+};
+
+window.removeEditExp=function(i){
+  const el=document.getElementById('eday-exp-'+i);if(el)el.remove();
+  updateEditDayNet();
+};
+
+window.updateEditDayNet=function(){
+  const inc=parseFloat(document.getElementById('eday-income').value)||0;
+  let exp=0;
+  document.querySelectorAll('#eday-exps input[type=number]').forEach(i=>exp+=parseFloat(i.value)||0);
+  const net=inc-exp;
+  const el=document.getElementById('eday-net-preview');
+  if(el){el.textContent=fmt(net);el.style.color=net>=0?'var(--green)':'var(--red)';}
+};
 
 function renderAll(){
   renderDebts();renderRecurring();renderLog();
